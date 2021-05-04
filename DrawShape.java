@@ -15,50 +15,58 @@ import javax.swing.JColorChooser;
  * draw a circle of random colours when clicked
  */
 public class DrawShape{
-    private double shapeIndex;
-    private double sizeX;
-    private double sizeY;
-    private double startX;
-    private double startY;
-
+    private String text;                                            //string for user text input
+    private double shapeIndex;                                      //double for current tool selection
+    private double sizeX = 150;                                     //initialise x size
+    private double sizeY = 150;                                     //initialise y size
+    private double startX;                                          //double for mouse x coordinates
+    private double startY;                                          //double for mouse y coordinates
+    private Color currentColor = Color.black;                       //initialise draw colour
+    private boolean erase = false;                                  //initialise erase mode
+    
     /**  
-     * Quit button initialiser
+     * button initialiser
     */
     public DrawShape(){
         UI.initialise();
-        UI.addButton("Quit", UI::quit);
-        UI.addButton("Toggle Shape", this::changeShape);
-        UI.addSlider("X Size", 1, 300, 150, this::setX);
-        UI.addSlider("Y Size", 1, 300, 150, this::setY);
-        UI.addSlider("Line Width", 1, 100, 50, this::setWidth);
-        UI.addButton("Change Colour", this::randColour);
-        UI.addButton("Clear", this::erase);
+        UI.addButton("Quit", UI::quit);                             //quit button
+        UI.addButton("Cycle Stamp Tool", this::changeShape);        //cycle stamps button
+        UI.addButton("Toggle Erase", this::eraseToggle);            //toggle erase mode button
+        UI.addTextField("Enter Text", this::setText);               //user text input for text stamp
+        UI.addSlider("X Size", 1, 300, 150, this::setX);            //x size slider user input
+        UI.addSlider("Y Size", 1, 300, 150, this::setY);            //y size slider user input
+        UI.addSlider("Line Width", 1, 100, 50, this::setWidth);     //line width slider user input
+        UI.addSlider("Font Size", 1, 100, 50, this::setFontSize);   //font size slider user input
+        UI.addButton("Select Colour", this::selectColour);          //colour selection input
+        UI.addButton("Clear Canvas", this::erase);                  //clear canvas completely
+        UI.setLineWidth(50);                                        //initialise line width
+        UI.setFontSize(10);                                         //initialise font size
     }
 
     /**
-     * Draw an oval when clicked
+     * Draw shapes when clicked
      */
     public void doMouse(String action, double x, double y)
     {
-        if (action.equals("clicked") && (shapeIndex == 0))
+        if (action.equals("clicked") && (shapeIndex == 0))              //if user clicks and has oval tool selected
         {
-            UI.fillOval(x - (sizeX/2), y - (sizeY/2), sizeX, sizeY);
+            UI.fillOval(x - (sizeX/2), y - (sizeY/2), sizeX, sizeY);    //draw oval with centre at user mouse position
         }
         
-        else if (action.equals("pressed") && (shapeIndex == 1)) 
+        else if (action.equals("pressed") && (shapeIndex == 1)) //obtain starting coordinates for click and hold for line tool
         {   
             startX = x;
             startY = y;
         }
-        else if (action.equals("released") && (shapeIndex == 1)) {
+        else if (action.equals("released") && (shapeIndex == 1)) { //draw line to where user releases for line tool
             UI.drawLine(startX, startY, x, y);
         }
         
-        else if (action.equals("pressed") && (shapeIndex == 2)) {
+        else if (action.equals("pressed") && (shapeIndex == 2)) { //obtain starting coordinates for click and hold for quadrilateral tool
             startX = x;
             startY = y;
         }
-         else if (action.equals("released") && (shapeIndex == 2)) {
+         else if (action.equals("released") && (shapeIndex == 2) && (erase == false)) { //if user releases, has quadrilateral mode selected and erase mode inactive
             if(startX < x && startY < y){
                 UI.fillRect(this.startX, this.startY, (x - startX), (y - startY));  // Top left to bottom right
            
@@ -72,56 +80,127 @@ public class DrawShape{
                 UI.fillRect(startX, y, (x - startX), (startY - y));                 // Bottom left to top right
                
             }
-        
+           
         }
+         else if (action.equals("released") && (shapeIndex == 2) && (erase == true)) {  //if user releases, has quadrilateral mode selected and erase mode active
+            if(startX < x && startY < y){
+                UI.eraseRect(this.startX, this.startY, (x - startX), (y - startY));  // Top left to bottom right
+           
+            } else if(startX > x && startY > y) {
+                UI.eraseRect(x, y, (startX - x), (startY - y));                      // Bottom right to top left
+               
+            } else if(startX > x && startY < y) {
+                UI.eraseRect(x, startY, (startX - x), (y - startY));                 // Top right to bottom left
+               
+            } else if(startX < x && startY > y) {
+                UI.eraseRect(startX, y, (x - startX), (startY - y));                 // Bottom left to top right
+               
+            }
+           
+        }
+        else if (action.equals("clicked") && (shapeIndex == 3)) {   //if user clicks and has text mode selected
+            UI.drawString(text, x, y);                      //stamp text
+        }
+        
     }
    
     /**
-     * method for chaning oval colour randomly
+     * method for changing oval colour randomly
      */
-    public void randColour()
+    public void selectColour()
     {
-        Color col = new Color((float) Math.random(), (float) Math.random(), (float) Math.random());
-        UI.setColor(col);
-        UI.println("Changed colour to random.");
+        this.currentColor = JColorChooser.showDialog(null, "Choose Color", this.currentColor);
+        UI.setColor(this.currentColor);                     //change stamp colour
+        UI.println("Changed colour");
     }
-
+    
+    /**
+     * set user input text to variable
+     */
+    public void setText(String input)
+    {
+        text = input;                                       //set user text input to variable
+    }
+    
+    /**
+     * set user slider input for font size
+     */
+    public void setFontSize(double size)
+    {
+        UI.setFontSize(size);                               //change font size
+        UI.println("Set font size to " + size);
+    }
+    
+    /**
+     * erase entire graphics pane
+     */
     public void erase()
     {
-        UI.clearGraphics();
-        UI.println("*Erased Graphics Window*");
+        UI.clearGraphics();                                 //erase entire graphics pane
+        UI.println("*Erased Graphics Pane*");
     }
     
+    /**
+     * toggle erase mode on quadrilateral tool
+     */
+    public void eraseToggle()
+    {   
+        if (erase){                                         //if erase mode is on, toggle off
+            erase = false;
+            UI.println("Set quadrilateral tool to draw");
+        }
+        
+        else if (!(erase)){                                 // if erase mode is off, toggle on
+            erase = true;
+            UI.println("Set quadrilateral tool to erase");
+        }
+    }
+    
+    /**
+     * cycle between stamp shapes
+     */
     public double changeShape()
     {
-        shapeIndex ++;
-        if (shapeIndex > 2){
+        shapeIndex ++;                                      //cycle through stamp modes
+        if (shapeIndex > 3){                                //loop through the 4 stamp modes
             shapeIndex = 0;
         }
-        if (shapeIndex == 0){
+        if (shapeIndex == 0){                               //oval tool
             UI.println("Set draw tool to oval.");
         }
-        if (shapeIndex == 1){
+        if (shapeIndex == 1){                               //line tool
             UI.println("Set draw tool to line.");
         }
-        if (shapeIndex == 2){
-            UI.println("Set draw tool to polygon.");
+        if (shapeIndex == 2){                               //quadrilateral tool
+            UI.println("Set draw tool to quadrilateral.");
         }
-        return shapeIndex;
+        if (shapeIndex == 3){                               //text tool
+            UI.println("Set draw tool to text.");
+        }
+        return shapeIndex;                                  //return current mode
     }
     
+    /**
+     * set user slider input for x size
+     */
     public void setX(double size)
     {
         sizeX = size;
         UI.println("Set size X to: " + size);
     }
     
+    /**
+     * set user slider input for y size
+     */
     public void setY(double size)
     {
         sizeY = size;
         UI.println("Set size Y to: " + size);
     }
     
+    /**
+     * set user slider input for line width
+     */
     public void setWidth(double size)
     {
         UI.setLineWidth(size);
